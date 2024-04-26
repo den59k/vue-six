@@ -1,4 +1,4 @@
-import { WatchSource, computed, ref } from "vue"
+import { ComputedRef, Ref, WatchSource, computed, ref } from "vue"
 
 export const getSearchFeed = (str: string, dotToSpace: boolean = true): string[] => {
   const reg = dotToSpace ? /[_\-,()]/g : /[_\-.,()]/g;
@@ -32,9 +32,8 @@ const getValue = <T>(item: WatchSource<T>): T => {
 }
 
 /** Complex reactivity search based on key */
-export const useSearch = <T>(data: WatchSource<T[]>, keyExtractor: (item: T) => string) => {
+export const useSearch = <T>(searchValue: Ref<string> | ComputedRef<string>, data: WatchSource<T[]>, keyExtractor: (item: T) => string) => {
   
-  const searchValue = ref("")
   const searchKeys = computed(() => {
     return getValue(data)?.map(item => getSearchFeed(keyExtractor(item))) ?? []
   })
@@ -47,5 +46,5 @@ export const useSearch = <T>(data: WatchSource<T[]>, keyExtractor: (item: T) => 
     return findByKeys(currentData, searchKeys.value, searchFeed)
   })
 
-  return [ searchValue, dataSearched ] as const
+  return dataSearched
 }
