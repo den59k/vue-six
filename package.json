@@ -1,0 +1,24 @@
+{
+  "name": "vuesix",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "description": "A few useful features that come in handy in your Vue3 project",
+  "author": "den59k",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/den59k/vue-six.git"
+  },
+  "dependencies": {
+    "vue": "^3"
+  },
+  "files": [
+    "src"
+  ],
+  "keywords": [
+    "vue",
+    "tools",
+    "utils"
+  ]
+}
