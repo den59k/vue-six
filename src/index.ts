@@ -9,3 +9,5 @@ export { useSearch, compareSearchFeed, getSearchFeed, findByKeys } from './hooks
 export { handleMove, getPos, handleAngleMove, handleScaleMove } from './utils/handleMove'
 export { MultiMap, createEventEmitter } from './utils/multimap'
 export { makeReactive } from './utils/makeReactive'
+
+export { query, parseQuery } from './utils/api'

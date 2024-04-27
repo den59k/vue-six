@@ -6,6 +6,9 @@
   "description": "A few useful features that come in handy in your Vue3 project",
   "author": "den59k",
   "type": "module",
+  "scripts": {
+    "test": "vitest"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/den59k/vue-six.git"
