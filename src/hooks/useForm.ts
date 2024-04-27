@@ -6,6 +6,9 @@ type Options<T> = {
 
 const cloneDeep = <T>(obj: T): T => {
   if (typeof obj !== "object" || obj === null) return obj
+  if (Array.isArray(obj)) {
+    return [ ...obj ] as T
+  }
   return Object.fromEntries(Object.entries(obj).map(([ key, value ]) => [ key, cloneDeep(value) ])) as T
 }
 
