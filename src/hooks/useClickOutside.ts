@@ -1,21 +1,27 @@
-import { Ref, WatchSource, watch } from "vue"
+import { Ref, ShallowRef, WatchSource, watch } from "vue"
+import { findParent } from "../utils/findParent"
 
-export const findParent = (el: HTMLElement, callback: (el: HTMLElement) => boolean): HTMLElement | null => {
-  if (callback(el)) return el
-  if (!el.parentElement) return null
-  return findParent(el.parentElement, callback)
+type Item = Ref<HTMLElement | undefined> | ShallowRef<HTMLElement | undefined>
+
+const clickOnIgnore = (target: HTMLElement, ignoreEl?: Item | Item[]) => {
+  if (!ignoreEl) return false
+  return !!findParent(target, (el) => {
+    if (!Array.isArray(ignoreEl)) return el === ignoreEl.value
+    for (const item of ignoreEl) {
+      if (item.value === el) return true
+    }
+    return false
+  })
 }
 
 /** Listen click outside element if condition true */
-export const useClickOutside = (condition: WatchSource, onClick: () => void, ignoreEl?: Ref<HTMLElement | undefined>) => {
+export const useClickOutside = (condition: WatchSource, onClick: () => void, ignoreEl?: Item | Item[]) => {
 
   const clickOutside = (e: MouseEvent) => {
-    const parent = ignoreEl && ignoreEl.value && findParent(e.target as HTMLElement, el => el === ignoreEl.value)
-    if (parent) return
+    if (clickOnIgnore(e.target as HTMLElement, ignoreEl)) return
 
-    document.addEventListener("click", (e) => {
-      const parent = ignoreEl && ignoreEl.value && findParent(e.target as HTMLElement, el => el === ignoreEl.value)
-      if (parent) return
+    document.addEventListener("mouseup", (e) => {
+      if (clickOnIgnore(e.target as HTMLElement, ignoreEl)) return 
       onClick()
     }, { once: true })
   }
@@ -29,4 +35,24 @@ export const useClickOutside = (condition: WatchSource, onClick: () => void, ign
       }
     }, 50)
   }, { flush: "post" })
+}
+
+export const useMouseDownOutside = (condition: WatchSource, onMouseDown: () => void, ignoreEl?: Item | Item[]) => {
+
+  const clickOutside = (e: MouseEvent) => {
+    if (e.defaultPrevented) return
+    if (clickOnIgnore(e.target as HTMLElement, ignoreEl)) return
+    onMouseDown()
+  }
+
+  watch(condition, value => {
+    setTimeout(() => {
+      if (value) {
+        document.addEventListener("mousedown", clickOutside)
+      } else {
+        document.removeEventListener("mousedown", clickOutside)
+      }
+    }, 50)
+  }, { flush: "post" })
+
 }

@@ -16,6 +16,8 @@ yarn install vuesix
 
 useClickOutside
 
+useParentScroll
+
 useDraggableItem
 
 useForm
