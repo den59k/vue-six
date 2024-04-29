@@ -12,3 +12,4 @@ export { MultiMap, createEventEmitter } from './utils/multimap'
 export { makeReactive } from './utils/makeReactive'
 
 export { query, parseQuery } from './utils/api'
+export { cloneDeep, isEqual } from './utils/object'
