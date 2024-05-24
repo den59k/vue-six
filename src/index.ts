@@ -6,6 +6,7 @@ export { useRequest, useRequestWatch, mutateRequestFull, mutateRequest, resetReq
 export { useSearch, compareSearchFeed, getSearchFeed, findByKeys } from './hooks/useSearch'
 export { useParentScroll } from './hooks/useParentScroll'
 export { useKeyDownLayer } from './hooks/useKeyDownLayer'
+export { useParserVModel, numberParser } from './hooks/useParserVModel'
 
 export { findParent } from './utils/findParent'
 export { handleMove, clamp, getPos, handleAngleMove, handleScaleMove } from './utils/handleMove'
