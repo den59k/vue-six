@@ -7,7 +7,7 @@ type Options<T> = {
   defaultValue?: T
 }
 
-export const useParserVModel = <P extends object, K extends keyof P>(props: P, key: K, emit: Emit, options: Options<P[K]> = {}) => {
+export const useVModel = <P extends object, K extends keyof P>(props: P, key: K, emit: Emit, options: Options<P[K]> = {}) => {
 
   const value = ref('')
   let cachedValue: P[K] = options.defaultValue ?? (null as any)
