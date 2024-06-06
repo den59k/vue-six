@@ -1,4 +1,4 @@
-import { ComputedRef, Ref, WatchSource, computed, ref } from "vue"
+import { ComputedRef, Ref, WatchSource, computed } from "vue"
 
 export const getSearchFeed = (str: string, dotToSpace: boolean = true): string[] => {
   const reg = dotToSpace ? /[_\-,()]/g : /[_\-.,()]/g;

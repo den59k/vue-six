@@ -4,6 +4,7 @@ export const isTouchEvent = (e: MouseEvent | TouchEvent | Touch): e is TouchEven
 
 export function getPos(_e: MouseEvent | TouchEvent | Touch, relativeRect?: DOMRect, type?: MoveType, touchIndex = -1) {
   const e = isTouchEvent(_e)? _e.touches[touchIndex < 0? _e.touches.length-1: touchIndex]: _e
+  if (!e) return { x: 0, y: 0 }
 
   if (relativeRect && type !== "absolute") {
     if (type === "threejs") {
@@ -94,7 +95,6 @@ export function handleMove(e: TouchEvent | MouseEvent, { onStart, onMove, onEnd,
 
 
   const dispose = (e: MouseEvent | TouchEvent) => {
-    const pos = getPos(getTouch(e, touchId), box, type ?? "absolute")
 
     document.removeEventListener("touchmove", move)
     document.removeEventListener("mousemove", move)
@@ -103,6 +103,11 @@ export function handleMove(e: TouchEvent | MouseEvent, { onStart, onMove, onEnd,
     document.removeEventListener("mouseup", end)
 
     if (onEnd){
+      const pos = getPos(getTouch(e, touchId), box, type ?? "absolute")
+      if (pos.x === 0 && pos.y === 0) {
+        onEnd({ e, pos: lastPos, startPos, deltaPos: { x: 0, y: 0 }})
+        return
+      }
       const deltaPos = { x: pos.x - lastPos.x, y: pos.y - lastPos.y}
       onEnd({ e, pos, startPos, deltaPos })
     }

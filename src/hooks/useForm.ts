@@ -6,7 +6,7 @@ type Options<T> = {
 }
 
 
-let globalErrorHandler = (_error: any, errors: any) => {}
+let globalErrorHandler = (_error: any, _errors: any) => {}
 
 export const setUseFormErrorHandler = (handler: (error: any, errors: Record<string, string>) => void) => {
   globalErrorHandler = handler
