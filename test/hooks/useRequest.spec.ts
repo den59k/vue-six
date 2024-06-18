@@ -50,7 +50,9 @@ it("test useRequest with condition", async () => {
   const testComponent = defineComponent({
     setup() {
       const { data, setReturnData } = useRequest(request, "test")
-      setReturnData("newResponse", "test")
+      setReturnData((arg: string) => {
+        if (arg === "test") return "newResponse"
+      })
       return {
         data
       }

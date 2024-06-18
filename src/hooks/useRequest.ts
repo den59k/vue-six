@@ -34,7 +34,7 @@ export const useRequest = <A extends any[], R>(request: (...args: A) => Promise<
 
   let lastArgs = [] as any[] as A
   const mutate = async (...args: A) => {
-    const returnDataValue = returnDataMap?.get(getArgKey(args))
+    const returnDataValue = returnDataCallback?.(...args)
     if (returnDataValue) {
       data.value = returnDataValue
       return
@@ -56,10 +56,9 @@ export const useRequest = <A extends any[], R>(request: (...args: A) => Promise<
     }
   }
 
-  let returnDataMap: Map<any, any> | null = null
-  const setReturnData = (resp: any, ...args: A) => {
-    if (!returnDataMap) returnDataMap = new Map()
-    returnDataMap.set(getArgKey(args), resp)
+  let returnDataCallback: (...args: A) => any
+  const setReturnData = (callback: (...args: A) => any) => {
+    returnDataCallback = callback
   }
 
   const mutateWithLastArgs = () => mutate(...lastArgs)
