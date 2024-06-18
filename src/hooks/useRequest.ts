@@ -1,8 +1,9 @@
-import { UnwrapRef, WatchSource, onBeforeUnmount, onMounted, shallowRef, watch } from 'vue'
+import { UnwrapRef, WatchSource, onBeforeUnmount, onMounted, onUnmounted, shallowRef, watch } from 'vue'
 import { MultiMap } from '../utils/multimap'
+import { PairMap } from '../utils/pairMap'
 
 type DataEntry = { data: any, lastUpdate: number, promise?: Promise<any> }
-const dataMap = new Map<any, Map<string, DataEntry>>()
+const dataMap = new PairMap<any, string, any>()
 const events = new MultiMap<any, () => Promise<void>>() // eslint-disable-line func-call-spacing
 
 const getArgKey = (args: any[]) => {
@@ -11,34 +12,34 @@ const getArgKey = (args: any[]) => {
 
 const getEntryOrCreate = <A extends any[]>(request: (...args: A) => Promise<any>, args: A, defaultValue: DataEntry) => {
   const argKey = getArgKey(args)
-  let map = dataMap.get(request)
-  if (!map) {
-    map = new Map()
-    dataMap.set(request, map)
-  }
-  const existsValue = map.get(argKey)
+  const existsValue = dataMap.get(request, argKey)
   if (existsValue) return existsValue
 
-  map.set(argKey, defaultValue)
+  dataMap.set(request, argKey, defaultValue)
   return defaultValue
 }
 
 /** Fetching and catching result tool */
 export const useRequest = <A extends any[], R>(request: (...args: A) => Promise<R>, ...args: A) => {
-  const argKey = getArgKey(args)
-  const defaultValue = dataMap.get(request)?.get(argKey) ?? null
+
+  const defaultValue = dataMap.get(request, getArgKey(args))
   const pending = shallowRef(defaultValue === null)
 
   const data = shallowRef<R | null>(defaultValue?.data ?? null)
   const error = shallowRef(false)
 
   const getCachedValue = (args: A) => {
-    const argKey = getArgKey(args)
-    return dataMap.get(request)?.get(argKey) ?? null
+    return dataMap.get(request, getArgKey(args))
   }
 
   let lastArgs = [] as any[] as A
   const mutate = async (...args: A) => {
+    const returnDataValue = returnDataMap?.get(getArgKey(args))
+    if (returnDataValue) {
+      data.value = returnDataValue
+      return
+    }
+
     const entry = getEntryOrCreate(request, args, { data: null, lastUpdate: -1 })
     data.value = entry.data
     pending.value = entry === null
@@ -53,6 +54,12 @@ export const useRequest = <A extends any[], R>(request: (...args: A) => Promise<
       delete entry.promise
       pending.value = false
     }
+  }
+
+  let returnDataMap: Map<any, any> | null = null
+  const setReturnData = (resp: any, ...args: A) => {
+    if (!returnDataMap) returnDataMap = new Map()
+    returnDataMap.set(getArgKey(args), resp)
   }
 
   const mutateWithLastArgs = () => mutate(...lastArgs)
@@ -74,7 +81,7 @@ export const useRequest = <A extends any[], R>(request: (...args: A) => Promise<
     events.remove(request, mutateWithLastArgs)
   })
 
-  return { data, error, pending, mutate }
+  return { data, error, pending, mutate, setReturnData }
 }
 
 type MapWatch <Type>= {
@@ -92,10 +99,20 @@ export const useRequestWatch = <A extends any[], R>(request: (...args: A) => Pro
   return resp
 }
 
+const dataReturn = new Map<any, () => any>()
+export const useRequestReturn = <A extends any[]>(request: (...args: A) => Promise<any>, callback: (...args: A) => any) => {
+  onMounted(() => {
+    dataReturn.set(request, callback)
+  })
+  onUnmounted(() => {
+    dataReturn.delete(request)
+  })
+}
+
 /** Revalidate request with any arguments */
 export const mutateRequestFull = async <A extends any[]>(request: (...args: A) => Promise<any>) => {
   if (events.get(request).length === 0) {
-    dataMap.delete(request)
+    dataMap.deletePair(request)
   } else {
     await Promise.all((events.get(request) ?? []).map(callback => callback()))
   }
@@ -105,7 +122,7 @@ export const mutateRequestFull = async <A extends any[]>(request: (...args: A) =
 /** Revalidate request with specific arguments */
 export const mutateRequest = async <A extends any[]>(request: (...args: A) => Promise<any>, ...args: A) => {
   if (events.get(request).length === 0) {
-    dataMap.get(request)?.delete(getArgKey(args))
+    dataMap.delete(request, getArgKey(args))
   } else {
     await Promise.all((events.get(request) ?? []).map(callback => callback()))
   }
