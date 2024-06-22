@@ -46,18 +46,26 @@ export const useForm = <T extends Record<string, any>>(defaultValues: T, options
     }
   }
 
-  const checkRequired = (keys?: Array<keyof T>, setErrors = true) => {
+  const checkRequired = (keys?: Array<keyof T>) => {
     for (let key of (keys ?? options.required ?? [])) {
       const val = values[key]
       if (val === null || (typeof val === "string" && !val.trim() || (Array.isArray(val) && val.length === 0))) {
-        if (setErrors) {
-          setError(key, { code: "required" })
-        }
+        setError(key, { code: "required" })
         return false
       }
     }
     return true
   }
+
+  const requiredFilled = computed(() => {
+    for (let key of options.required ?? []) {
+      const val = values[key]
+      if (val === null || (typeof val === "string" && !val.trim()) || (Array.isArray(val) && val.length === 0)) {
+        return false
+      }
+    }
+    return true
+  })
 
   const handleError = (e: any) => {
     globalErrorHandler(e, errors)
@@ -122,6 +130,7 @@ export const useForm = <T extends Record<string, any>>(defaultValues: T, options
     pending,
     values,
     hasChange,
-    setChange
+    setChange,
+    requiredFilled
   }
 }

@@ -3,7 +3,7 @@ import { MultiMap } from '../utils/multimap'
 import { PairMap } from '../utils/pairMap'
 
 type DataEntry = { data: any, lastUpdate: number, promise?: Promise<any> }
-const dataMap = new PairMap<any, string, any>()
+const dataMap = new PairMap<any, string, DataEntry>()
 const events = new MultiMap<any, () => Promise<void>>() // eslint-disable-line func-call-spacing
 
 const getArgKey = (args: any[]) => {
@@ -27,10 +27,6 @@ export const useRequest = <A extends any[], R>(request: (...args: A) => Promise<
 
   const data = shallowRef<R | null>(defaultValue?.data ?? null)
   const error = shallowRef(false)
-
-  const getCachedValue = (args: A) => {
-    return dataMap.get(request, getArgKey(args))
-  }
 
   let lastArgs = [] as any[] as A
   const mutate = async (...args: A) => {
@@ -56,6 +52,16 @@ export const useRequest = <A extends any[], R>(request: (...args: A) => Promise<
     }
   }
 
+  const lazyMutate = async (...args: A) => {
+    const entry = dataMap.get(request, getArgKey(args))
+    if (entry !== null && entry.lastUpdate > 0 && Date.now() < entry.lastUpdate + 1000*30) {
+      data.value = entry.data
+      lastArgs = args
+      return
+    }
+    mutate(...args)
+  }
+
   let returnDataCallback: (...args: A) => any
   const setReturnData = (callback: (...args: A) => any) => {
     returnDataCallback = callback
@@ -64,13 +70,7 @@ export const useRequest = <A extends any[], R>(request: (...args: A) => Promise<
   const mutateWithLastArgs = () => mutate(...lastArgs)
 
   onMounted(() => {
-    const entry = getCachedValue(args)
-    if (entry !== null && entry.lastUpdate > 0) {
-      data.value = entry.data
-      lastArgs = args
-      return
-    }
-    mutate(...args)
+    lazyMutate(...args)
   })
 
   onMounted(() => {
@@ -80,7 +80,7 @@ export const useRequest = <A extends any[], R>(request: (...args: A) => Promise<
     events.remove(request, mutateWithLastArgs)
   })
 
-  return { data, error, pending, mutate, setReturnData }
+  return { data, error, pending, mutate, lazyMutate, setReturnData }
 }
 
 type MapWatch <Type>= {
@@ -92,7 +92,7 @@ export const useRequestWatch = <A extends any[], R>(request: (...args: A) => Pro
   const resp = useRequest(request, ...args.map(item => typeof item === "function"? item(): item.value) as A)
 
   watch(args, (args) => {
-    resp.mutate(...args as A)
+    resp.lazyMutate(...args as A)
   })
 
   return resp
@@ -110,9 +110,8 @@ export const useRequestReturn = <A extends any[]>(request: (...args: A) => Promi
 
 /** Revalidate request with any arguments */
 export const mutateRequestFull = async <A extends any[]>(request: (...args: A) => Promise<any>) => {
-  if (events.get(request).length === 0) {
-    dataMap.deletePair(request)
-  } else {
+  dataMap.deletePair(request)
+  if (events.get(request).length > 0) {
     await Promise.all((events.get(request) ?? []).map(callback => callback()))
   }
 }
@@ -120,9 +119,8 @@ export const mutateRequestFull = async <A extends any[]>(request: (...args: A) =
 // TODO: exec promise only for specific arguments
 /** Revalidate request with specific arguments */
 export const mutateRequest = async <A extends any[]>(request: (...args: A) => Promise<any>, ...args: A) => {
-  if (events.get(request).length === 0) {
-    dataMap.delete(request, getArgKey(args))
-  } else {
+  dataMap.delete(request, getArgKey(args))
+  if (events.get(request).length > 0) {
     await Promise.all((events.get(request) ?? []).map(callback => callback()))
   }
 }
