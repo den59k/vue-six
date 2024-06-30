@@ -46,22 +46,3 @@ export class MultiMap<T, K> {
     this._map.clear()
   }
 }
-
-export const createEventEmitter = <Events extends Record<string, (...args: any) => void>>() => {
-  const _events = new MultiMap<keyof Events, any>()
-  const addEventListener = <T extends keyof Events>(channel: T, event: Events[T]) => {
-    _events.add(channel, event)
-  }
-  const removeEventListener = <T extends keyof Events>(channel: T, event: Events[T]) => {
-    _events.remove(channel, event)
-  }
-  const dispatch = <T extends keyof Events>(channel: T, ...args: Parameters<Events[T]>) => {
-    return Promise.all(_events.get(channel).map(item => item(...args as any) as ReturnType<Events[T]>))
-  }
-
-  return {
-    addEventListener,
-    removeEventListener,
-    dispatch
-  }
-}

@@ -10,8 +10,9 @@ export { useVModel, numberParser } from './hooks/useParserVModel'
 
 export { findParent } from './utils/findParent'
 export { handleMove, clamp, getPos, handleAngleMove, handleScaleMove } from './utils/handleMove'
-export { MultiMap, createEventEmitter } from './utils/multimap'
+export { MultiMap } from './utils/multimap'
 export { PairMap } from './utils/pairMap'
+export { createEventEmitter } from './utils/eventEmitter'
 export { makeReactive } from './utils/makeReactive'
 
 export { query, parseQuery } from './utils/api'
