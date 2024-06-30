@@ -4,6 +4,7 @@ type Emit = (...args: any) => void
 
 type Options<T> = {
   parseValue?: (str: string) => T,
+  toStringValue?: (str: T) => string,
   defaultValue?: T
 }
 
@@ -17,7 +18,7 @@ export const useVModel = <P extends object, K extends keyof P>(props: P, key: K,
       value.value = ""
       return
     }
-    value.value = modelValue.toString()
+    value.value = options.toStringValue? options.toStringValue(modelValue): modelValue.toString()
   }, { immediate: true })
 
   const parseValue = (str: string) => {
