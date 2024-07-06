@@ -26,7 +26,7 @@ export const useRequest = <A extends any[], R>(request: (...args: A) => Promise<
   const pending = shallowRef(defaultValue === null)
 
   const data = shallowRef<R | null>(defaultValue?.data ?? null)
-  const error = shallowRef(false)
+  const error = shallowRef<any>(null)
 
   let lastArgs = [] as any[] as A
   const mutate = async (...args: A) => {
@@ -43,9 +43,10 @@ export const useRequest = <A extends any[], R>(request: (...args: A) => Promise<
 
     try {
       data.value = await makeRequestWithoutCache(entry, request, ...args)
+      error.value = null
     } catch (e) {
-      error.value = true
-      throw e
+      error.value = e
+      // throw e
     } finally {
       delete entry.promise
       pending.value = false

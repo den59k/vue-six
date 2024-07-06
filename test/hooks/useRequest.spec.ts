@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest'
-import { useRequest } from '../../src'
+import { mutateRequest, useRequest } from '../../src'
 import { defineComponent, h, nextTick, onMounted } from 'vue'
 import { mount } from '@vue/test-utils'
 
@@ -70,4 +70,38 @@ it("test useRequest with condition", async () => {
   expect(testComponentRender.text()).toBe("newResponse")
 
   expect(request).toBeCalledTimes(0)
+})
+
+it("test error useRequest", async () => {
+  const request = vi.fn()
+  
+  const testComponent = defineComponent({
+    setup() {
+      const { data, error } = useRequest(request, "test")
+      return {
+        data, error
+      }
+    },
+    render({ data, error }) {
+      return h("div", error? "error": data)
+    }
+  })
+  
+  request.mockRejectedValue("test")
+
+  const testComponentRender = mount(testComponent)
+  expect(testComponentRender.text()).toBe("")
+
+  await new Promise(res => setTimeout(res, 0))
+
+  expect(request).toBeCalledTimes(1)
+  expect(testComponentRender.text()).toBe("error")
+
+  request.mockReturnValue("test")
+
+  mutateRequest(request)
+
+  await new Promise(res => setTimeout(res, 0))
+  expect(request).toBeCalledTimes(2)
+  expect(testComponentRender.text()).toBe("test")
 })
