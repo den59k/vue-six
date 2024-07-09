@@ -71,7 +71,7 @@ export const useForm = <T extends Record<string, any>>(defaultValues: T, options
     globalErrorHandler(e, errors)
     for (let key in errors) {
       if (!(key in values)) {
-        delete errors[key]
+        delete (errors as any)[key]
       }
     }
   }
