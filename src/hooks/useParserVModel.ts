@@ -10,12 +10,12 @@ type Options<T> = {
 
 export const useVModel = <P extends object, K extends keyof P>(props: P, key: K, emit: Emit, options: Options<P[K]> = {}) => {
 
-  const value = ref('')
+  const value = ref(options.defaultValue ?? "")
   let cachedValue: P[K] = options.defaultValue ?? (null as any)
   watch(() => props[key], (modelValue) => {
     if (modelValue === cachedValue) return
     if (modelValue === null || modelValue === undefined) {
-      value.value = ""
+      value.value = options.defaultValue ?? ""
       return
     }
     value.value = options.toStringValue? options.toStringValue(modelValue): modelValue.toString()
