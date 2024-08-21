@@ -10,7 +10,7 @@ type Options<T> = {
 
 export const useVModel = <P extends object, K extends keyof P>(props: P, key: K, emit: Emit, options: Options<P[K]> = {}) => {
 
-  const value = ref(options.defaultValue ?? "")
+  const value = ref<any>(options.defaultValue ?? "")
   let cachedValue: P[K] = options.defaultValue ?? (null as any)
   watch(() => props[key], (modelValue) => {
     if (modelValue === cachedValue) return
@@ -28,7 +28,7 @@ export const useVModel = <P extends object, K extends keyof P>(props: P, key: K,
     return str as P[K]
   }
 
-  watch(value, (value: string) => {
+  watch(value, (value: any) => {
     cachedValue = parseValue(value)
     emit("update:modelValue", cachedValue)
   })
