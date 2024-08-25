@@ -30,6 +30,7 @@ export const useRequest = <A extends any[], R>(request: (...args: A) => Promise<
 
   let lastArgs = [] as any[] as A
   const mutate = async (...args: A) => {
+    error.value = null
     const returnDataValue = returnDataCallback?.(...args)
     if (returnDataValue) {
       data.value = returnDataValue
@@ -43,7 +44,6 @@ export const useRequest = <A extends any[], R>(request: (...args: A) => Promise<
 
     try {
       data.value = await makeRequestWithoutCache(entry, request, ...args)
-      error.value = null
     } catch (e) {
       error.value = e
       // throw e

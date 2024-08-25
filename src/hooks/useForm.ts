@@ -70,7 +70,7 @@ export const useForm = <T extends Record<string, any>>(defaultValues: T, options
   const handleError = (e: any) => {
     globalErrorHandler(e, errors)
     for (let key in errors) {
-      if (!(key in values)) {
+      if (!(key in values) && key !== "_global") {
         delete (errors as any)[key]
       }
     }
@@ -80,6 +80,7 @@ export const useForm = <T extends Record<string, any>>(defaultValues: T, options
     e.preventDefault()
     if (!checkRequired()) return
 
+    delete (errors as any)["_global"]
     pending.value = true
     try {
       await submit(values)
@@ -124,6 +125,7 @@ export const useForm = <T extends Record<string, any>>(defaultValues: T, options
     handleSubmit,
     register,
     setError,
+    errors,
     checkRequired,
     updateDefaultValues,
     updateDefaultValuesWatch,
