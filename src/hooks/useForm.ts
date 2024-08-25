@@ -16,7 +16,7 @@ export const useForm = <T extends Record<string, any>>(defaultValues: T, options
 
   const pending = ref(false)
   const values = reactive(cloneDeep(defaultValues)) as T
-  const errors = reactive<Partial<Record<keyof T & "_global", { code?: string, message?: string }>>>({})
+  const errors = reactive<Partial<Record<keyof T | "_global", { code?: string, message?: string }>>>({})
 
   const oldValues: { [key: string]: string } = {}
   watch(values, () => {
