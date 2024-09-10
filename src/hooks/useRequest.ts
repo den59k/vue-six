@@ -32,7 +32,7 @@ export const useRequest = <A extends any[], R>(request: (...args: A) => Promise<
   const mutate = async (...args: A) => {
     error.value = null
     const returnDataValue = returnDataCallback?.(...args)
-    if (returnDataValue) {
+    if (returnDataValue !== undefined) {
       data.value = returnDataValue
       return
     }
