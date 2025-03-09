@@ -50,7 +50,8 @@ export const useDraggableItem = () => {
         clonedItem = null
         options.onEnd?.(e as MouseEvent)
       },
-      type: "absolute"
+      type: "absolute",
+      prevent: false
     })
   }
 
