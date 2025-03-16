@@ -4,16 +4,16 @@ import { MultiMap } from "../utils/multimap";
 const listeners = new MultiMap<string, (e: KeyboardEvent) => void>()
 let hasEvent = false
 
+export const handleKeyDownLayer = (e: KeyboardEvent) => {
+  if (!listeners.has(e.code)) return
+  const _listeners = listeners.get(e.code)
+  e.preventDefault()
+  const callback = _listeners[_listeners.length-1]
+  callback(e)
+}
+
 /** Add layout for keydown event */
 export const useKeyDownLayer = (key: string, watcher: WatchSource<boolean>, callback: () => void) => {
-
-  const onKeyDown = (e: KeyboardEvent) => {
-    if (!listeners.has(e.code)) return
-    const _listeners = listeners.get(e.code)
-    e.preventDefault()
-    const callback = _listeners[_listeners.length-1]
-    callback(e)
-  }
 
   watch(watcher, (value) => {
     if (value) {
@@ -22,11 +22,11 @@ export const useKeyDownLayer = (key: string, watcher: WatchSource<boolean>, call
       listeners.remove(key, callback)
     }
     if (listeners.size > 0 && !hasEvent) {
-      document.addEventListener("keydown", onKeyDown)
+      document.addEventListener("keydown", handleKeyDownLayer)
       hasEvent = true
     }
     if (listeners.size === 0) {
-      document.removeEventListener("keydown", onKeyDown)
+      document.removeEventListener("keydown", handleKeyDownLayer)
       hasEvent = false
     }
   }, { immediate: true })
