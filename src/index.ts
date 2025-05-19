@@ -5,7 +5,7 @@ export { usePending } from './hooks/usePending'
 export { useRequest, useRequestWatch, mutateRequestFull, mutateRequest, resetRequestCache, makeRequest } from './hooks/useRequest'
 export { useSearch, compareSearchFeed, getSearchFeed, findByKeys } from './hooks/useSearch'
 export { useParentScroll } from './hooks/useParentScroll'
-export { useKeyDownLayer, handleKeyDownLayer } from './hooks/useKeyDownLayer'
+export { useKeyDownLayer, handleKeyDownLayer, getKeyDownListeners, setKeyDownListeners } from './hooks/useKeyDownLayer'
 export { useVModel, numberParser } from './hooks/useParserVModel'
 
 export { findParent } from './utils/findParent'
