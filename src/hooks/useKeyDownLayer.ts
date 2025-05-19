@@ -2,7 +2,6 @@ import { WatchSource, watch } from "vue";
 import { MultiMap } from "../utils/multimap";
 
 let listeners = new MultiMap<string, (e: KeyboardEvent) => void>()
-let hasEvent = false
 
 export const getKeyDownListeners = () => {
   return listeners
@@ -23,6 +22,7 @@ export const handleKeyDownLayer = (e: KeyboardEvent) => {
 export const useKeyDownLayer = (key: string, watcher: WatchSource<boolean>, callback: () => void) => {
 
   watch(watcher, (value) => {
+    const hasEvent = listeners.size > 0
     if (value) {
       listeners.add(key, callback)
     } else {
@@ -30,11 +30,9 @@ export const useKeyDownLayer = (key: string, watcher: WatchSource<boolean>, call
     }
     if (listeners.size > 0 && !hasEvent) {
       document.addEventListener("keydown", handleKeyDownLayer)
-      hasEvent = true
     }
     if (listeners.size === 0) {
       document.removeEventListener("keydown", handleKeyDownLayer)
-      hasEvent = false
     }
   }, { immediate: true })
 }
