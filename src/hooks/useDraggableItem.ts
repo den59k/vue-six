@@ -4,7 +4,8 @@ type DraggableOptions = {
   onStart?: (item: HTMLElement) => void,
   onMove?: (e: MouseEvent, item: HTMLElement) => void,
   onEnd?: (e: MouseEvent) => void,
-  threshold?: number
+  threshold?: number,
+  offset?: { left: number, top: number }
 }
 
 /** Clone element and move it follow mouse */
@@ -19,7 +20,7 @@ export const useDraggableItem = () => {
     
     const el = (e.currentTarget as HTMLButtonElement)
     const rect = el.getBoundingClientRect()
-    const offset = { left: rect.left - e.clientX, top: rect.top - e.clientY }
+    const offset = options.offset ?? { left: rect.left - e.clientX, top: rect.top - e.clientY }
     const width = el.clientWidth
     
     const onStart = () => {
