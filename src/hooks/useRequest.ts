@@ -7,11 +7,11 @@ const dataMap = new PairMap<any, string, DataEntry>()
 const events = new MultiMap<any, () => Promise<void>>() // eslint-disable-line func-call-spacing
 
 const getArgKey = (args: any[]) => {
-  return args.length === 0 ? '_default' : JSON.stringify(args)
+  return args.length === 0 ? '' : JSON.stringify(args)
 }
 
-const getEntryOrCreate = <A extends any[]>(request: (...args: A) => Promise<any>, args: A, defaultValue: DataEntry) => {
-  const argKey = getArgKey(args)
+const getEntryOrCreate = <A extends any[]>(request: (...args: A) => Promise<any>, argKey: string, defaultValue: DataEntry) => {
+  
   const existsValue = dataMap.get(request, argKey)
   if (existsValue) return existsValue
 
@@ -29,21 +29,27 @@ export const useRequest = <A extends any[], R>(request: (...args: A) => Promise<
   const error = shallowRef<any>(null)
 
   let lastArgs = [] as any[] as A
+  let currentArgKey: string | null = null
   const mutate = async (...args: A) => {
     error.value = null
     const returnDataValue = returnDataCallback?.(...args)
     if (returnDataValue !== undefined) {
+      pending.value = false
       data.value = returnDataValue
       return
     }
-
-    const entry = getEntryOrCreate(request, args, { data: null, lastUpdate: -1 })
+    const argKey = getArgKey(args)
+    currentArgKey = argKey
+    const entry = getEntryOrCreate(request, argKey, { data: null, lastUpdate: -1 })
     data.value = entry.data
     pending.value = entry === null
     lastArgs = args
 
     try {
-      data.value = await makeRequestWithoutCache(entry, request, ...args)
+      const resp = await makeRequestWithoutCache(entry, request, ...args)
+      if (currentArgKey === argKey) {
+        data.value = resp
+      }
     } catch (e) {
       error.value = e
       // throw e
@@ -150,7 +156,8 @@ const makeRequestWithoutCache = async <A extends any[], R>(entry: DataEntry, req
 
 /** Make cached request */
 export const makeRequest = async <A extends any[], R>(request: (...args: A) => Promise<R>, ...args: A) => {
-  const entry = getEntryOrCreate(request, args, { data: null, lastUpdate: -1 })
+  const argKey = getArgKey(args)
+  const entry = getEntryOrCreate(request, argKey, { data: null, lastUpdate: -1 })
   if (entry !== null && entry.lastUpdate > 0) {
     return entry.data
   }
