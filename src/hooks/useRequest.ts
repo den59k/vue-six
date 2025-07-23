@@ -31,15 +31,15 @@ export const useRequest = <A extends any[], R>(request: (...args: A) => Promise<
   let lastArgs = [] as any[] as A
   let currentArgKey: string | null = null
   const mutate = async (...args: A) => {
-    error.value = null
+    const argKey = getArgKey(args)
+    currentArgKey = argKey
+
     const returnDataValue = returnDataCallback?.(...args)
     if (returnDataValue !== undefined) {
       pending.value = false
       data.value = returnDataValue
       return
     }
-    const argKey = getArgKey(args)
-    currentArgKey = argKey
     const entry = getEntryOrCreate(request, argKey, { data: null, lastUpdate: -1 })
     data.value = entry.data
     pending.value = entry === null
@@ -60,7 +60,9 @@ export const useRequest = <A extends any[], R>(request: (...args: A) => Promise<
   }
 
   const lazyMutate = async (...args: A) => {
-    const entry = dataMap.get(request, getArgKey(args))
+    const argKey = getArgKey(args)
+    currentArgKey = argKey
+    const entry = dataMap.get(request, argKey)
     if (entry !== null && entry.lastUpdate > 0 && Date.now() < entry.lastUpdate + 1000*30) {
       data.value = entry.data
       lastArgs = args
