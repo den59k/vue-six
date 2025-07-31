@@ -118,21 +118,19 @@ export const useRequestReturn = <A extends any[]>(request: (...args: A) => Promi
 }
 
 /** Revalidate request with any arguments */
-export const mutateRequestFull = async <A extends any[]>(request: (...args: A) => Promise<any>) => {
-  if (events.get(request).length > 0) {
+export const mutateRequestFull = async <A extends any[]>(request: (...args: A) => Promise<any>, triggerRequests = true) => {
+  dataMap.deletePair(request)
+  if (triggerRequests && events.get(request).length > 0) {
     await Promise.all((events.get(request) ?? []).map(callback => callback()))
-  } else {
-    dataMap.deletePair(request)
   }
 }
 
 // TODO: exec promise only for specific arguments
 /** Revalidate request with specific arguments */
 export const mutateRequest = async <A extends any[]>(request: (...args: A) => Promise<any>, ...args: A) => {
+  dataMap.delete(request, getArgKey(args))
   if (events.get(request).length > 0) {
     await Promise.all((events.get(request) ?? []).map(callback => callback()))
-  } else {
-    dataMap.delete(request, getArgKey(args))
   }
 }
 
