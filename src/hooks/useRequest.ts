@@ -92,6 +92,7 @@ export const useRequestExt = <A extends any[], R>(options: RequestOptions, reque
     const entry = dataMap.get(request, argKey)
     if (entry !== null && entry.lastUpdate > 0 && Date.now() < entry.lastUpdate + 1000*30) {
       data.value = entry.data
+      error.value = null
       lastArgs = args
       return
     }
