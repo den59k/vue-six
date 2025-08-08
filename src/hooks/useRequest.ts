@@ -60,6 +60,7 @@ export const useRequestExt = <A extends any[], R>(options: RequestOptions, reque
     const argKey = getArgKey(args)
     currentArgKey = argKey
 
+    error.value = null
     const returnDataValue = returnDataCallback?.(...args)
     if (returnDataValue !== undefined) {
       pending.value = false
@@ -76,7 +77,6 @@ export const useRequestExt = <A extends any[], R>(options: RequestOptions, reque
       if (currentArgKey === argKey) {
         data.value = resp
       }
-      error.value = null
     } catch (e) {
       error.value = e
       // throw e
