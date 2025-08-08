@@ -1,4 +1,4 @@
-import { WatchSource, computed, reactive, ref, watch } from "vue"
+import { type WatchSource, computed, reactive, ref, watch } from "vue"
 import { cloneDeep, isEqual } from "../utils/object"
 
 type Options<T> = {

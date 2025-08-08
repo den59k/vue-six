@@ -1,4 +1,4 @@
-import { Ref, ShallowRef, WatchSource, watch } from "vue"
+import { type Ref, type ShallowRef, type WatchSource, watch } from "vue"
 import { findParent } from "../utils/findParent"
 
 type Item = Ref<HTMLElement | undefined> | ShallowRef<HTMLElement | undefined>

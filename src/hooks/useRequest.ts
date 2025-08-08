@@ -1,4 +1,4 @@
-import { UnwrapRef, WatchSource, onBeforeUnmount, onMounted, onUnmounted, shallowRef, watch } from 'vue'
+import { type Ref, type  UnwrapRef, type WatchSource, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { MultiMap } from '../utils/multimap'
 import { PairMap } from '../utils/pairMap'
 
@@ -19,13 +19,39 @@ const getEntryOrCreate = <A extends any[]>(request: (...args: A) => Promise<any>
   return defaultValue
 }
 
-/** Fetching and catching result tool */
-export const useRequest = <A extends any[], R>(request: (...args: A) => Promise<R>, ...args: A) => {
+type RequestOptions = {
+  deep?: boolean
+}
+
+// type UseRequest<A extends any[], R> = {
+//   data: Ref<R | null>, 
+//   error: ShallowRef<any>, 
+//   pending: ShallowRef<boolean>, 
+//   mutate: (...args: A) => Promise<void>, 
+//   lazyMutate: (...args: A) => Promise<void>, 
+//   setReturnData: (callback: (...args: A) => any) => void
+// }
+
+/**
+ * Extended version of useRequest with additional options.
+ * @template A - The arguments type for the request function.
+ * @template R - The return type of the request function.
+ * @param {RequestOptions} options - Configuration options for the request.
+ * @param {(...args: A) => Promise<R>} request - The async request function.
+ * @param {...A} args - Arguments to pass to the request function.
+ * @property {Ref<R|null>} data - Reactive reference to the request result.
+ * @property {ShallowRef<any>} error - Reactive reference to any request error.
+ * @property {ShallowRef<boolean>} pending - Reactive reference to the pending state.
+ * @property {function} mutate - Function to manually trigger the request.
+ * @property {function} lazyMutate - Function to conditionally trigger the request.
+ * @property {function} setReturnData - Function to set a callback for custom data return.
+ */
+export const useRequestExt = <A extends any[], R>(options: RequestOptions, request: (...args: A) => Promise<R>, ...args: A) => {
 
   const defaultValue = dataMap.get(request, getArgKey(args))
   const pending = shallowRef(defaultValue === null)
 
-  const data = shallowRef<R | null>(defaultValue?.data ?? null)
+  const data = (options.deep? ref: shallowRef)<R | null>(defaultValue?.data ?? null) as Ref<R | null>
   const error = shallowRef<any>(null)
 
   let lastArgs = [] as any[] as A
@@ -42,7 +68,7 @@ export const useRequest = <A extends any[], R>(request: (...args: A) => Promise<
     }
     const entry = getEntryOrCreate(request, argKey, { data: null, lastUpdate: -1 })
     data.value = entry.data
-    pending.value = entry === null
+    pending.value = entry.data === null
     lastArgs = args
 
     try {
@@ -50,6 +76,7 @@ export const useRequest = <A extends any[], R>(request: (...args: A) => Promise<
       if (currentArgKey === argKey) {
         data.value = resp
       }
+      error.value = null
     } catch (e) {
       error.value = e
       // throw e
@@ -92,13 +119,39 @@ export const useRequest = <A extends any[], R>(request: (...args: A) => Promise<
   return { data, error, pending, mutate, lazyMutate, setReturnData }
 }
 
+/**
+ * Deep reactive version of useRequest.
+ * @template A - The arguments type for the request function.
+ * @template R - The return type of the request function.
+ * @param {(...args: A) => Promise<R>} request - The async request function.
+ * @param {...A} args - Arguments to pass to the request function.
+ */
+export const useRequestDeep = <A extends any[], R>(request: (...args: A) => Promise<R>, ...args: A) => 
+  useRequestExt({ deep: true }, request, ...args)
+
+/**
+ * Basic version of useRequest with shallow reactivity.
+ * @template A - The arguments type for the request function.
+ * @template R - The return type of the request function.
+ * @param {(...args: A) => Promise<R>} request - The async request function.
+ * @param {...A} args - Arguments to pass to the request function.
+ */
+export const useRequest = <A extends any[], R>(request: (...args: A) => Promise<R>, ...args: A) => 
+  useRequestExt({ deep: false }, request, ...args)
+
 type MapWatch <Type>= {
   [Key in keyof Type]: WatchSource<Type[Key]>;
 };
 
-/** useRequest with reactive arguments */
+/**
+ * useRequest with reactive arguments that automatically re-fetches when args change.
+ * @template A - The arguments type for the request function.
+ * @template R - The return type of the request function.
+ * @param {(...args: A) => Promise<R>} request - The async request function.
+ * @param {...MapWatch<A>} args - Reactive arguments to watch.
+ */
 export const useRequestWatch = <A extends any[], R>(request: (...args: A) => Promise<R>, ...args: MapWatch<A>) => {
-  const resp = useRequest(request, ...args.map(item => typeof item === "function"? item(): item.value) as A)
+  const resp = useRequestExt({ deep: false }, request, ...args.map(item => typeof item === "function"? item(): item.value) as A)
 
   watch(args, (args) => {
     resp.lazyMutate(...args as A)
@@ -107,17 +160,30 @@ export const useRequestWatch = <A extends any[], R>(request: (...args: A) => Pro
   return resp
 }
 
-const dataReturn = new Map<any, () => any>()
-export const useRequestReturn = <A extends any[]>(request: (...args: A) => Promise<any>, callback: (...args: A) => any) => {
-  onMounted(() => {
-    dataReturn.set(request, callback)
+/**
+ * Deep reactive version of useRequest with reactive arguments.
+ * @template A - The arguments type for the request function.
+ * @template R - The return type of the request function.
+ * @param {(...args: A) => Promise<R>} request - The async request function.
+ * @param {...MapWatch<A>} args - Reactive arguments to watch.
+ */
+export const useRequestDeepWatch = <A extends any[], R>(request: (...args: A) => Promise<R>, ...args: MapWatch<A>) => {
+  const resp = useRequestExt({ deep: true }, request, ...args.map(item => typeof item === "function"? item(): item.value) as A)
+
+  watch(args, (args) => {
+    resp.lazyMutate(...args as A)
   })
-  onUnmounted(() => {
-    dataReturn.delete(request)
-  })
+
+  return resp
 }
 
-/** Revalidate request with any arguments */
+/**
+ * Revalidates all cached data for a request function and optionally triggers updates.
+ * @template A - The arguments type for the request function.
+ * @param {(...args: A) => Promise<any>} request - The request function to revalidate.
+ * @param {boolean} [triggerRequests=true] - Whether to trigger pending requests.
+ * @returns {Promise<void>} A promise that resolves when revalidation is complete.
+ */
 export const mutateRequestFull = async <A extends any[]>(request: (...args: A) => Promise<any>, triggerRequests = true) => {
   dataMap.deletePair(request)
   if (triggerRequests && events.get(request).length > 0) {
@@ -126,7 +192,13 @@ export const mutateRequestFull = async <A extends any[]>(request: (...args: A) =
 }
 
 // TODO: exec promise only for specific arguments
-/** Revalidate request with specific arguments */
+/**
+ * Revalidates cached data for specific arguments of a request function.
+ * @template A - The arguments type for the request function.
+ * @param {(...args: A) => Promise<any>} request - The request function to revalidate.
+ * @param {...A} args - Specific arguments to revalidate.
+ * @returns {Promise<void>} A promise that resolves when revalidation is complete.
+ */
 export const mutateRequest = async <A extends any[]>(request: (...args: A) => Promise<any>, ...args: A) => {
   dataMap.delete(request, getArgKey(args))
   if (events.get(request).length > 0) {
@@ -134,7 +206,9 @@ export const mutateRequest = async <A extends any[]>(request: (...args: A) => Pr
   }
 }
 
-/** Reset all cache data */
+/**
+ * Clears all cached request data and event listeners.
+ */
 export const resetRequestCache = () => {
   events._map.clear()
   dataMap.clear()
@@ -154,7 +228,14 @@ const makeRequestWithoutCache = async <A extends any[], R>(entry: DataEntry, req
   return entry.data
 }
 
-/** Make cached request */
+/**
+ * Makes a request with caching support.
+ * @template A - The arguments type for the request function.
+ * @template R - The return type of the request function.
+ * @param {(...args: A) => Promise<R>} request - The async request function.
+ * @param {...A} args - Arguments to pass to the request function.
+ * @returns {Promise<R>} A promise that resolves with the request result.
+ */
 export const makeRequest = async <A extends any[], R>(request: (...args: A) => Promise<R>, ...args: A) => {
   const argKey = getArgKey(args)
   const entry = getEntryOrCreate(request, argKey, { data: null, lastUpdate: -1 })

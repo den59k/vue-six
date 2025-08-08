@@ -1,4 +1,4 @@
-import { onBeforeUnmount, watch, ShallowRef, Ref, WatchSource } from 'vue'
+import { onBeforeUnmount, watch, type ShallowRef, type Ref, type WatchSource } from 'vue'
 import { findParent } from "../utils/findParent"
 
 type ElementRef = ShallowRef<HTMLElement | undefined> | Ref<HTMLElement | undefined>

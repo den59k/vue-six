@@ -1,4 +1,4 @@
-import { WatchSource, watch } from "vue";
+import { type WatchSource, watch } from "vue";
 import { MultiMap } from "../utils/multimap";
 
 let listeners = new MultiMap<string, (e: KeyboardEvent) => void>()

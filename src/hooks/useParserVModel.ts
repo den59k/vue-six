@@ -8,6 +8,7 @@ type Options<T> = {
   defaultValue?: T
 }
 
+/** @deprecated Use defineModel Vue method */
 export const useVModel = <P extends object, K extends keyof P>(props: P, key: K, emit: Emit, options: Options<P[K]> = {}) => {
 
   const value = ref<any>(options.defaultValue ?? "")
