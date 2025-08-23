@@ -2,6 +2,7 @@ import { expect, it, vi } from 'vitest'
 import { mutateRequest, useRequest } from '../../src'
 import { defineComponent, h, nextTick, onMounted } from 'vue'
 import { mount } from '@vue/test-utils'
+import { updateRequestData } from '../../src/hooks/useRequest'
 
 it("test useRequest", async () => {
 
@@ -104,4 +105,32 @@ it("test error useRequest", async () => {
   await new Promise(res => setTimeout(res, 0))
   expect(request).toBeCalledTimes(2)
   expect(testComponentRender.text()).toBe("test")
+})
+
+
+it("test update request", async () => {
+
+  const request = vi.fn(async () => "test")
+
+  const testComponent = defineComponent({
+    setup() {
+      const { data } = useRequest(request)
+      return { data }
+    },
+    render({ data }) {
+      return h("div", data)
+    }
+  })
+
+  const testComponentRender = mount(testComponent)
+
+  expect(request).toBeCalledTimes(1)
+  await new Promise(res => setTimeout(res, 0))
+
+  expect(testComponentRender.text()).toBe("test")
+  
+  updateRequestData(request, "test2")
+  await new Promise(res => setTimeout(res, 0))
+  expect(testComponentRender.text()).toBe("test2")
+
 })

@@ -1,8 +1,8 @@
-import { type Ref, type  UnwrapRef, type WatchSource, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
+import { type Ref, type  UnwrapRef, type WatchSource, onBeforeUnmount, onMounted, ref, shallowRef, triggerRef, watch } from 'vue'
 import { MultiMap } from '../utils/multimap'
 import { PairMap } from '../utils/pairMap'
 
-type DataEntry = { data: any, lastUpdate: number, promise?: Promise<any> }
+type DataEntry = { data: any, lastUpdate: number, updatedManually?: boolean, promise?: Promise<any> }
 const dataMap = new PairMap<any, string, DataEntry>()
 const events = new MultiMap<any, () => Promise<void>>() // eslint-disable-line func-call-spacing
 
@@ -67,10 +67,15 @@ export const useRequestExt = <A extends any[], R>(options: RequestOptions, reque
       data.value = returnDataValue
       return
     }
-    const entry = getEntryOrCreate(request, argKey, { data: null, lastUpdate: -1 })
+    const entry = getEntryOrCreate(request, argKey, { data: null, lastUpdate: -1, updatedManually: false })
     data.value = entry.data
     pending.value = entry.data === null
     lastArgs = args
+
+    if (entry.data && entry.updatedManually) {
+      triggerRef(data)
+      return
+    }
 
     try {
       const resp = await makeRequestWithoutCache(entry, request, ...args)
@@ -118,6 +123,18 @@ export const useRequestExt = <A extends any[], R>(options: RequestOptions, reque
   })
 
   return { data, error, pending, mutate, lazyMutate, setReturnData }
+}
+
+export const updateRequestData = async <A extends any[], R>(request: (...args: A) => Promise<R>, data: any, ...args: A) => {
+  const argKey = getArgKey(args)
+  const entry = getEntryOrCreate(request, argKey, { data, lastUpdate: Date.now() })
+  entry.data = data
+  entry.updatedManually = true
+
+  if (events.get(request).length > 0) {
+    await Promise.all((events.get(request) ?? []).map(callback => callback()))
+  }
+  entry.updatedManually = false
 }
 
 /**
