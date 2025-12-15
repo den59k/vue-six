@@ -1,6 +1,6 @@
 {
   "name": "vuesix",
-  "version": "1.0.44",
+  "version": "1.0.45",
   "main": "src/index.ts",
   "license": "MIT",
   "description": "A few useful features that come in handy in your Vue3 project",
